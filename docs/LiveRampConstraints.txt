@@ -1099,6 +1099,10 @@ type Quote {
         && LiveRampPlatformandUsageCPM[LiveRampPlatformandUsageCPM].enhancedmatchingforgooglecustomermatchb2b[EnhancedMatchingforGoogleCustomerMatchB2B] == 0
         , "LiveRamp Platform and Usage - CPM requires at least one child SKU to be selected. Please configure a component product within the bundle."
         , "error");
+
+        //CRM-45184 
+       message(Pricing_Type__c == "CPM" && LiveRampPlatformandUsageCPM[LiveRampPlatformandUsageCPM].qty > 1,"Quantity should be 1 for this Product.","error");
+        
 }
 
 type LiveRamp_Platform_and_Usage_bundle : LineItem {
