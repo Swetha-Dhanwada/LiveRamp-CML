@@ -1,6 +1,6 @@
-# CML-UAT
+# LiveRamp-CML
 
-Mirrors the UAT1 `LiveRampConstraints` CalcProcedureDefinition (CML) so it can be browsed and diffed outside the org.
+Mirrors the UAT1 and Prod `LiveRampConstraints` CalcProcedureDefinition (CML) so it can be browsed and diffed outside the org.
 
 ## Contents
 
@@ -45,7 +45,7 @@ node scripts/cml-daily-refresh.js
 Steps to Run the script:
 Clone the repo anywhere (no fixed location required now):
 
-git clone https://github.com/Swetha-Dhanwada/CML-UAT.git C:\wherever\you\want\CML-UAT
+git clone https://github.com/Swetha-Dhanwada/LiveRamp-CML.git C:\wherever\you\want\LiveRamp-CML
 
 2. Install prerequisites on that machine:
 
@@ -55,7 +55,7 @@ Git configured with push access to origin (SSH key or stored credential) so the 
 
 3. Run it manually first to confirm it works:
 
-cd C:\wherever\you\want\CML-UAT
+cd C:\wherever\you\want\LiveRamp-CML
 .\scripts\cml-daily-refresh.ps1
 
 It'll write a log to <repo>\logs\cml-refresh-<timestamp>.log and only commit/push if the CML actually changed.
@@ -63,7 +63,7 @@ It'll write a log to <repo>\logs\cml-refresh-<timestamp>.log and only commit/pus
 4. Register the Windows Scheduled Task pointing at the new location:
 
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `
-  -Argument "-NoProfile -ExecutionPolicy Bypass -File `"C:\wherever\you\want\CML-UAT\scripts\cml-daily-refresh.ps1`""
+  -Argument "-NoProfile -ExecutionPolicy Bypass -File `"C:\wherever\you\want\LiveRamp-CML\scripts\cml-daily-refresh.ps1`""
 $trigger = New-ScheduledTaskTrigger -Daily -At 6am
 Register-ScheduledTask -TaskName "CML Rule Explorer Daily Refresh" -Action $action -Trigger $trigger
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Daily refresh pipeline for the CML Rule Explorer (CML-UAT repo):
+ * Daily refresh pipeline for the CML Rule Explorer (LiveRamp-CML repo):
  *   1. Resolve the active ExpressionSetDefinitionVersion for the
  *      LiveRampConstraints Expression Set in UAT1 and pull its raw CML
  *      (ConstraintModel) text via the REST API.
