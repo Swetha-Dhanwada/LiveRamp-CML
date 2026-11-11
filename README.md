@@ -21,6 +21,21 @@ CML update 2026-09-30T14:05:12.000Z: 163 -> 165 types, 2110 -> 2118 conditions (
 
 Runs daily at 06:00 via the Windows Scheduled Task **"CML Rule Explorer Daily Refresh"**, which invokes `scripts/cml-daily-refresh.ps1`. Requires the `sf` CLI authenticated against the `UAT1` org alias on this machine.
 
+### Prod mirror and UAT1 vs Prod differences
+
+The same script can mirror Prod (read-only: one SOQL query and one GET on `ConstraintModel`):
+
+```
+node scripts/cml-daily-refresh.js --org Prod --alias <sf-alias-for-prod> [--no-git]
+```
+
+- Output goes to `docs/prod/` (`LiveRampConstraints.txt`, `cml_data.json`, `CML_Rule_Explorer.html`). The Prod page is built from the UAT1 page, so identical CML keeps its plain-English text.
+- `docs/CML_UAT1_vs_Prod.html` is regenerated on every run once both mirrors exist (`node scripts/cml-diff.js` rebuilds it on its own).
+- The explorer pages link to each other and to the diff report.
+- `--no-git` regenerates files without checkout, commit or push. `CML_MEMORY.md` and the Quote Pricing Guide stay UAT1-only.
+- The scheduled task still runs UAT1 only. To refresh Prod daily, add a second task that runs the command above.
+- `scripts/cml-explorer-model.js` converts parser output into the shape the explorer page renders.
+
 To run manually:
 
 ```

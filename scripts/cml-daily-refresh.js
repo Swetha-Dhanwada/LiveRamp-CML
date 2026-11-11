@@ -23,14 +23,30 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { parseCml } = require('./cml-parse');
 const { buildExplorerData, readEmbeddedData } = require('./cml-explorer-model');
+const { buildDiffHtml } = require('./cml-diff');
 
-const ORG_ALIAS = 'UAT1';
+// CLI: node scripts/cml-daily-refresh.js [--org UAT1|Prod] [--alias <sf alias>] [--no-git]
+//   --org      which environment to mirror (default UAT1). Prod output goes to docs/prod/.
+//   --alias    sf CLI alias to use (default: same as --org).
+//   --no-git   fetch + regenerate files only; skip checkout/pull/commit/push.
+// Only read-only calls are made against the org (SOQL query + GET ConstraintModel).
+function cliArg(name, fallback) {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : fallback;
+}
+const ORG = cliArg('org', 'UAT1');
+const IS_PROD = ORG.toLowerCase() === 'prod';
+const ORG_LABEL = IS_PROD ? 'Prod' : ORG;
+const ORG_ALIAS = cliArg('alias', ORG);
+const NO_GIT = process.argv.includes('--no-git');
 const EXPRESSION_SET_NAME = 'LiveRampConstraints';
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DOCS_DIR = path.join(REPO_ROOT, 'docs');
-const RAW_CML_TXT = path.join(DOCS_DIR, 'LiveRampConstraints.txt');
-const CML_DATA_JSON = path.join(DOCS_DIR, 'cml_data.json');
-const EXPLORER_HTML = path.join(DOCS_DIR, 'CML_Rule_Explorer.html');
+const ORG_DIR = IS_PROD ? path.join(DOCS_DIR, 'prod') : DOCS_DIR;
+const RAW_CML_TXT = path.join(ORG_DIR, 'LiveRampConstraints.txt');
+const CML_DATA_JSON = path.join(ORG_DIR, 'cml_data.json');
+const EXPLORER_HTML = path.join(ORG_DIR, 'CML_Rule_Explorer.html');
+const UAT_EXPLORER_TEMPLATE = path.join(DOCS_DIR, 'CML_Rule_Explorer.html');
 const CATEGORY_MAP_JSON = path.join(DOCS_DIR, 'category_map.json');
 const MEMORY_MD = path.join(DOCS_DIR, 'CML_MEMORY.md');
 const QUOTE_GUIDE_HTML = path.join(DOCS_DIR, 'CML_Quote_Pricing_Guide.html');
@@ -89,7 +105,7 @@ function fetchRawCml() {
   const version = versionRes.result.records[0];
   if (!version) throw new Error(`No Active ExpressionSetDefinitionVersion for ${EXPRESSION_SET_NAME}`);
 
-  const tmpFile = path.join(REPO_ROOT, '.cml-raw.tmp.txt');
+  const tmpFile = path.join(REPO_ROOT, '.cml-raw.tmp.txt'); // gitignored
   sf([
     'api', 'request', 'rest',
     `/services/data/v68.0/sobjects/ExpressionSetDefinitionVersion/${version.Id}/ConstraintModel`,
@@ -100,20 +116,68 @@ function fetchRawCml() {
   return raw;
 }
 
-function updateExplorerHtml(types) {
-  let html = fs.readFileSync(EXPLORER_HTML, 'utf8');
+const NAV_RE = /<!--envnav-->.*?<!--\/envnav-->/s;
 
+/** Cross-links between the UAT1 / Prod explorers and the diff report. */
+function navHtml(links) {
+  return `<!--envnav--><p style="margin:8px 0 0;font-size:13px">${links
+    .map(([label, href]) => `<a href="${href}" style="color:var(--accent);margin-right:14px">${label}</a>`)
+    .join('')}</p><!--/envnav-->`;
+}
+
+/** Idempotently stamp the env label and nav links into an explorer page. */
+function applyPageChrome(html, label, links) {
+  html = html
+    .replace(/<title>CML Interactive Explorer - [^<]*<\/title>/, `<title>CML Interactive Explorer - ${label}</title>`)
+    .replace(/Browse the \S+ Expression Set/, `Browse the ${label} Expression Set`);
+  const nav = navHtml(links);
+  if (NAV_RE.test(html)) return html.replace(NAV_RE, () => nav);
+  // First time: insert right after the header blurb.
+  return html.replace(/(<p>Browse the [^<]*<\/p>)/, (m) => `${m}\n    ${nav}`);
+}
+
+const PAGE_LINKS = {
+  UAT1: [['Prod explorer', 'prod/CML_Rule_Explorer.html'], ['UAT1 vs Prod differences', 'CML_UAT1_vs_Prod.html']],
+  Prod: [['UAT1 explorer', '../CML_Rule_Explorer.html'], ['UAT1 vs Prod differences', '../CML_UAT1_vs_Prod.html']],
+};
+
+function updateExplorerHtml(types) {
   // The page renders the UI model (id/api/attributes/rules/messages/...), not
   // the raw parser output. Reuse existing plain-English text where the CML is
   // unchanged. NOTE: do not touch any `<div class="sub">` here — the only one
   // in the file lives inside the JS card template in renderList().
-  const { data, stats } = buildExplorerData(types, readEmbeddedData(html));
+  const uatHtml = fs.readFileSync(UAT_EXPLORER_TEMPLATE, 'utf8');
+  // Prod pages are generated from the UAT1 page as a template. On the first
+  // Prod run there is no previous Prod page, so seed descriptions from UAT1:
+  // identical CML in both orgs then keeps its plain-English text.
+  const previousHtml = fs.existsSync(EXPLORER_HTML) ? fs.readFileSync(EXPLORER_HTML, 'utf8') : uatHtml;
+  const { data, stats } = buildExplorerData(types, readEmbeddedData(previousHtml));
   console.log(`Explorer model: ${data.length} types (${stats.reused} reused descriptions, ${stats.generated} generated)`);
 
   // Function replacer: JSON may contain `$&`, `$1` etc. which a string
   // replacement would interpret.
-  html = html.replace(/const DATA = \[.*?\];\s*\n/s, () => `const DATA = ${JSON.stringify(data)};\n`);
+  let html = uatHtml.replace(/const DATA = \[.*?\];\s*\n/s, () => `const DATA = ${JSON.stringify(data)};\n`);
+  html = applyPageChrome(html, ORG_LABEL, PAGE_LINKS[ORG_LABEL] || []);
+  fs.mkdirSync(path.dirname(EXPLORER_HTML), { recursive: true });
   fs.writeFileSync(EXPLORER_HTML, html);
+
+  // Keep the UAT1 page's nav pointing at Prod even when only Prod refreshed.
+  if (IS_PROD) {
+    fs.writeFileSync(UAT_EXPLORER_TEMPLATE, applyPageChrome(uatHtml, 'UAT1', PAGE_LINKS.UAT1));
+  }
+}
+
+/** Regenerate docs/CML_UAT1_vs_Prod.html when both environments are mirrored. */
+function updateDiffReport() {
+  const uatJson = path.join(DOCS_DIR, 'cml_data.json');
+  const prodJson = path.join(DOCS_DIR, 'prod', 'cml_data.json');
+  if (!fs.existsSync(uatJson) || !fs.existsSync(prodJson)) return;
+  const html = buildDiffHtml(
+    JSON.parse(fs.readFileSync(uatJson, 'utf8')),
+    JSON.parse(fs.readFileSync(prodJson, 'utf8')),
+    new Date().toISOString().slice(0, 10)
+  );
+  fs.writeFileSync(path.join(DOCS_DIR, 'CML_UAT1_vs_Prod.html'), html);
 }
 
 function updateMemoryStats(types, today, raw) {
@@ -191,17 +255,19 @@ function describeChanges(oldTypes, newTypes) {
 }
 
 function main() {
-  git(['checkout', 'main']);
-  git(['pull', 'origin', 'main']);
+  if (!NO_GIT) {
+    git(['checkout', 'main']);
+    git(['pull', 'origin', 'main']);
+  }
 
-  console.log(`Fetching CML for '${EXPRESSION_SET_NAME}' from ${ORG_ALIAS}...`);
+  console.log(`Fetching CML for '${EXPRESSION_SET_NAME}' from ${ORG_ALIAS} (${ORG_LABEL}, read-only)...`);
   const raw = fetchRawCml();
   const previous = fs.existsSync(RAW_CML_TXT) ? fs.readFileSync(RAW_CML_TXT, 'utf8') : null;
 
   // Compare with line endings normalized: git's core.autocrlf can check
   // LiveRampConstraints.txt out with CRLF on Windows while the freshly
   // fetched REST response always comes back LF-only, which would otherwise
-  // register as a "change" every single day even when UAT1 CML is untouched.
+  // register as a "change" every single day even when the org's CML is untouched.
   const normalize = (s) => (s === null ? null : s.replace(/\r\n/g, '\n'));
   if (normalize(previous) === normalize(raw)) {
     console.log('No change in LiveRampConstraints.txt since last check — nothing to do.');
@@ -210,6 +276,7 @@ function main() {
 
   const oldTypes = previous !== null ? parseCml(previous) : [];
 
+  fs.mkdirSync(ORG_DIR, { recursive: true });
   fs.writeFileSync(RAW_CML_TXT, raw);
 
   const types = parseCml(raw);
@@ -222,14 +289,22 @@ function main() {
   const today = new Date().toISOString().slice(0, 10);
   fs.writeFileSync(CML_DATA_JSON, JSON.stringify(types, null, 1));
   updateExplorerHtml(types);
-  updateMemoryStats(types, today, raw);
-  updateAllQuoteGuides(types, today, raw);
+  // CML_MEMORY.md and the Quote Pricing Guide describe UAT1 only.
+  if (!IS_PROD) {
+    updateMemoryStats(types, today, raw);
+    updateAllQuoteGuides(types, today, raw);
+  }
+  updateDiffReport();
 
   const description = describeChanges(oldTypes, types);
   console.log(`Change detected: ${description}`);
 
+  if (NO_GIT) {
+    console.log('--no-git: files regenerated; nothing committed or pushed.');
+    return;
+  }
   git(['add', 'docs']);
-  git(['commit', '-m', `CML update: ${description}`]);
+  git(['commit', '-m', `CML update${IS_PROD ? ' (Prod)' : ''}: ${description}`]);
   git(['push', 'origin', 'main']);
   console.log('Committed and pushed to main.');
 }
