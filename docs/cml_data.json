@@ -5151,9 +5151,17 @@
    {
     "kind": "message",
     "code": "message(Graph_RUM_Tier_V2 == \"Tier 13: >2b Graph Records Under Management\", \"A support case will be automatically created for below conditions: Graph RUM Tier (Tier 13: >2b Graph Records Under Management)\", \"Info\");"
+   },
+   {
+    "kind": "rule",
+    "code": "//CRM-43819 rule(Deployment_Mechanism != \"Cloud-embedded\", \"hide\", \"attribute\", \"Cloud_Provider\");"
+   },
+   {
+    "kind": "preference",
+    "code": "//CRM-45201 preference(Deployment_Mechanism != \"Cloud-embedded\" -> Cloud_Provider == null);"
    }
   ],
-  "count": 24,
+  "count": 26,
   "category": "Identity Services"
  },
  {
@@ -9047,8 +9055,33 @@
   "parent": "LineItem",
   "annotation": "",
   "alias": false,
-  "conditions": [],
-  "count": 0,
+  "conditions": [
+   {
+    "kind": "rule",
+    "code": "rule(Clean_Room_Owner_Type != \"Media Intelligence Clean Room\" && Clean_Room_Owner_Type != \"Cross Media Intelligence Contributor\" && Clean_Room_Owner_Type != \"Reciprocity reporting as permitted by Advertiser\",\"hide\", \"attribute\", \"Advertiser_Terms\");"
+   },
+   {
+    "kind": "constraint",
+    "code": "constraint(Clean_Room_Owner_Type != \"Media Intelligence Clean Room\" && Clean_Room_Owner_Type != \"Cross Media Intelligence Contributor\" && Clean_Room_Owner_Type != \"Reciprocity reporting as permitted by Advertiser\" -> Advertiser_Terms == \"None\");"
+   },
+   {
+    "kind": "message",
+    "code": "message((Clean_Room_Owner_Type == \"Media Intelligence Clean Room\" || Clean_Room_Owner_Type == \"Cross Media Intelligence Contributor\" || Clean_Room_Owner_Type == \"Reciprocity reporting as permitted by Advertiser\") && Advertiser_Terms == \"None\",\"Please select a value for Advertiser Terms.\", \"error\");"
+   },
+   {
+    "kind": "rule",
+    "code": "rule(Clean_Room_Owner_Type != \"Media Intelligence Clean Room\" && Clean_Room_Owner_Type != \"Cross Media Intelligence Contributor\" && Clean_Room_Owner_Type != \"Reciprocity reporting as permitted by Advertiser\",\"hide\", \"attribute\", \"Meta_As_Partner\");"
+   },
+   {
+    "kind": "constraint",
+    "code": "constraint(Clean_Room_Owner_Type != \"Media Intelligence Clean Room\" && Clean_Room_Owner_Type != \"Cross Media Intelligence Contributor\" && Clean_Room_Owner_Type != \"Reciprocity reporting as permitted by Advertiser\" -> Meta_As_Partner == \"None\");"
+   },
+   {
+    "kind": "message",
+    "code": "message((Clean_Room_Owner_Type == \"Media Intelligence Clean Room\" || Clean_Room_Owner_Type == \"Cross Media Intelligence Contributor\" || Clean_Room_Owner_Type == \"Reciprocity reporting as permitted by Advertiser\") && Meta_As_Partner == \"None\",\"Please select a value for Meta As Partner\", \"error\");"
+   }
+  ],
+  "count": 6,
   "category": "Clean Room"
  },
  {

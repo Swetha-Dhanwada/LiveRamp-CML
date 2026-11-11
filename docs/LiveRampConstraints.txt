@@ -3913,6 +3913,8 @@ type IdentityEngine : LineItem {
     string RevenueType = ["Fixed", "One-Time", "Variable"];
 
     string UnitOfMeasure = ["Graph Records Under Management", "Tokens", "None", "CPM"];
+    string Deployment_Mechanism = ["None", "LiveRamp-Hosted", "Cloud-embedded"]; //CRM-45201
+    string Cloud_Provider = ["None", "Amazon Web Services (AWS)", "Google Cloud Platform"]; //CRM-45201
 
     string Graph_RUM_Tier_V2 = ["None", "Tier 1: 5mm Graph Records Under Management", "Tier 2: 10mm Graph Records Under Management", "Tier 3: 20mm Graph Records Under Management", "Tier 4: 40mm Graph Records Under Management", "Tier 5: 80mm Graph Records Under Management", "Tier 6: 150mm Graph Records Under Management", "Tier 7: 300mm Graph Records Under Management", "Tier 8: 500mm Graph Records Under Management", "Tier 9: 750mm Graph Records Under Management", "Tier 10: 1b Graph Records Under Management", "Tier 11: 1.5b Graph Records Under Management", "Tier 12: 2b Graph Records Under Management", "Tier 13: >2b Graph Records Under Management"];
 
@@ -3971,6 +3973,9 @@ type IdentityEngine : LineItem {
     message(Graph_RUM_Tier_V2 == "Tier 13: >2b Graph Records Under Management", "A support case will be automatically created for below conditions: Graph RUM Tier (Tier 13: >2b Graph Records Under Management)", "Info");
 
     //CRM-43819
+    
+    rule(Deployment_Mechanism != "Cloud-embedded", "hide", "attribute", "Cloud_Provider"); //CRM-45201
+    preference(Deployment_Mechanism != "Cloud-embedded" -> Cloud_Provider == null); //CRM-45201
 
 }
 
@@ -5618,7 +5623,7 @@ type WholesaleMatchData : LineItem {
 
     string UnitOfMeasure = ["Each"];
 
-    string Wholesale_Type_V2 = ["Cookie Wholesale", "Mobile Wholesale"];
+    string Wholesale_Type_V2 = ["Cookie Wholesale", "Mobile Wholesale","IP"]; //CRM-45201 added IP value
 
     int qty = this.quantity;
 
@@ -6305,8 +6310,18 @@ type LiveRampCleanRoomEnterpriseOwner : LineItem {
 
     @(defaultValue = "Each")
     string UnitOfMeasure = ["Each"];
+    //CRM-45201
+    string Clean_Room_Owner_Type = ["None","Media Intelligence Clean Room", "Cross Media Intelligence Contributor", "Reciprocity reporting as permitted by Advertiser", "Clean Room Owner Use-Case"];
 
-    string Meta_As_Partner = ["With Meta", "Without Meta"];
+    string Advertiser_Terms = ["None","With Advertiser Terms Attachment", "Without Advertiser Terms Attachment"];
+
+    string Meta_As_Partner = ["None","With Meta", "Without Meta"];
+    rule(Clean_Room_Owner_Type != "Media Intelligence Clean Room" && Clean_Room_Owner_Type != "Cross Media Intelligence Contributor" && Clean_Room_Owner_Type != "Reciprocity reporting as permitted by Advertiser","hide", "attribute", "Advertiser_Terms");
+    constraint(Clean_Room_Owner_Type != "Media Intelligence Clean Room" && Clean_Room_Owner_Type != "Cross Media Intelligence Contributor" && Clean_Room_Owner_Type != "Reciprocity reporting as permitted by Advertiser" -> Advertiser_Terms == "None");
+    message((Clean_Room_Owner_Type == "Media Intelligence Clean Room" || Clean_Room_Owner_Type == "Cross Media Intelligence Contributor" || Clean_Room_Owner_Type == "Reciprocity reporting as permitted by Advertiser") && Advertiser_Terms == "None","Please select a value for Advertiser Terms.", "error");
+    rule(Clean_Room_Owner_Type != "Media Intelligence Clean Room" && Clean_Room_Owner_Type != "Cross Media Intelligence Contributor" && Clean_Room_Owner_Type != "Reciprocity reporting as permitted by Advertiser","hide", "attribute", "Meta_As_Partner");
+    constraint(Clean_Room_Owner_Type != "Media Intelligence Clean Room" && Clean_Room_Owner_Type != "Cross Media Intelligence Contributor" && Clean_Room_Owner_Type != "Reciprocity reporting as permitted by Advertiser" -> Meta_As_Partner == "None");
+    message((Clean_Room_Owner_Type == "Media Intelligence Clean Room" || Clean_Room_Owner_Type == "Cross Media Intelligence Contributor" || Clean_Room_Owner_Type == "Reciprocity reporting as permitted by Advertiser") && Meta_As_Partner == "None","Please select a value for Meta As Partner", "error");
 
 }
 

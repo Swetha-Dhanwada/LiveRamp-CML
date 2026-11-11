@@ -8,7 +8,8 @@
  *      main. If identical, stop — nothing to do today.
  *   3. If different: overwrite docs/LiveRampConstraints.txt in place,
  *      re-parse into docs/cml_data.json, re-embed into
- *      docs/CML_Rule_Explorer.html (header subtitle + DATA array), refresh
+ *      docs/CML_Rule_Explorer.html (DATA array in the UI shape, built by
+ *      scripts/cml-explorer-model.js), refresh
  *      the stats block in docs/CML_MEMORY.md, and commit straight to main
  *      with a timestamped message describing what changed (types/conditions
  *      added, removed, or changed) — no per-day branches.
@@ -21,6 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { parseCml } = require('./cml-parse');
+const { buildExplorerData, readEmbeddedData } = require('./cml-explorer-model');
 
 const ORG_ALIAS = 'UAT1';
 const EXPRESSION_SET_NAME = 'LiveRampConstraints';
@@ -98,18 +100,19 @@ function fetchRawCml() {
   return raw;
 }
 
-function updateExplorerHtml(types, today) {
+function updateExplorerHtml(types) {
   let html = fs.readFileSync(EXPLORER_HTML, 'utf8');
-  const totalConditions = types.reduce((s, t) => s + t.count, 0);
 
-  html = html.replace(
-    /<div class="sub">.*?<\/div>/s,
-    `<div class="sub">${types.length} product types &middot; ${totalConditions} extracted conditions (message / require / preference / rule / constraint) &middot; Source: ${ORG_ALIAS} ExpressionSet '${EXPRESSION_SET_NAME}' (refreshed ${today})</div>`
-  );
-  html = html.replace(
-    /const DATA = \[.*?\];\s*\n/s,
-    `const DATA = ${JSON.stringify(types)};\n`
-  );
+  // The page renders the UI model (id/api/attributes/rules/messages/...), not
+  // the raw parser output. Reuse existing plain-English text where the CML is
+  // unchanged. NOTE: do not touch any `<div class="sub">` here — the only one
+  // in the file lives inside the JS card template in renderList().
+  const { data, stats } = buildExplorerData(types, readEmbeddedData(html));
+  console.log(`Explorer model: ${data.length} types (${stats.reused} reused descriptions, ${stats.generated} generated)`);
+
+  // Function replacer: JSON may contain `$&`, `$1` etc. which a string
+  // replacement would interpret.
+  html = html.replace(/const DATA = \[.*?\];\s*\n/s, () => `const DATA = ${JSON.stringify(data)};\n`);
   fs.writeFileSync(EXPLORER_HTML, html);
 }
 
@@ -218,7 +221,7 @@ function main() {
 
   const today = new Date().toISOString().slice(0, 10);
   fs.writeFileSync(CML_DATA_JSON, JSON.stringify(types, null, 1));
-  updateExplorerHtml(types, today);
+  updateExplorerHtml(types);
   updateMemoryStats(types, today, raw);
   updateAllQuoteGuides(types, today, raw);
 
