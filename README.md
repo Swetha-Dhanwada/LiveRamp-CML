@@ -68,3 +68,72 @@ $trigger = New-ScheduledTaskTrigger -Daily -At 6am
 Register-ScheduledTask -TaskName "CML Rule Explorer Daily Refresh" -Action $action -Trigger $trigger
 
 Since the script now derives its root from its own location ($PSScriptRoot), you don't need to edit the script at all when moving machines — just point the scheduled task's -File argument at wherever you cloned the repo on that machine.
+
+## Running on macOS
+
+Everything above works on a Mac. The refresh script uses `sf` (not `sf.cmd`) on macOS, and `launchd` replaces the Windows Scheduled Task.
+
+### Prerequisites
+
+- Node.js, Salesforce CLI (`sf`) and git installed (`node -v`, `sf --version`, `git --version`).
+- `sf` authenticated against each org you mirror. Use the aliases `UAT1` and `Prod`, or pass your own alias.
+  ```bash
+  sf org login web -a UAT1 --instance-url https://test.salesforce.com   # sandbox
+  sf org login web -a Prod                                              # production
+  sf org list                                                           # confirm aliases
+  ```
+  `sf org login jwt` is more reliable for unattended runs, because web logins expire.
+- Git push access without a prompt, either the macOS keychain or SSH:
+  ```bash
+  git config --global credential.helper osxkeychain   # then do one manual `git push` and sign in
+  # or use SSH
+  git remote set-url origin git@github.com:Swetha-Dhanwada/LiveRamp-CML.git
+  ```
+
+### Run it manually
+
+```bash
+git clone https://github.com/Swetha-Dhanwada/LiveRamp-CML.git
+cd LiveRamp-CML
+
+# UAT1 -> docs/
+./scripts/cml-daily-refresh.sh UAT1
+
+# Prod -> docs/prod/  (read-only against the org; pass the alias if it is not "Prod")
+./scripts/cml-daily-refresh.sh Prod [your-prod-alias]
+
+# Or call node directly. --no-git regenerates files without checkout/commit/push,
+# so you can review the diff before committing:
+node scripts/cml-daily-refresh.js --org UAT1 --no-git
+node scripts/cml-daily-refresh.js --org Prod --alias Prod --no-git
+```
+
+- Logs go to `logs/cml-refresh-<org>-<timestamp>.log`.
+- If the CML hasn't changed, the script exits without touching git.
+- To commit and push by hand after a `--no-git` run:
+  ```bash
+  git add docs scripts README.md
+  git commit -m "CML update"
+  git push origin main
+  ```
+- `node scripts/cml-diff.js` rebuilds `docs/CML_UAT1_vs_Prod.html` on its own.
+
+### Schedule it (launchd)
+
+```bash
+./scripts/install-mac-schedule.sh              # UAT1 daily 06:00 + Prod daily 06:15
+./scripts/install-mac-schedule.sh --uat1-only  # or --prod-only
+CML_PROD_ALIAS=my-prod ./scripts/install-mac-schedule.sh   # custom alias
+```
+
+This writes `~/Library/LaunchAgents/com.liveramp.cml.UAT1.plist` and `com.liveramp.cml.Prod.plist` and loads them.
+
+```bash
+launchctl kickstart -k gui/$(id -u)/com.liveramp.cml.UAT1   # run one now
+launchctl print gui/$(id -u)/com.liveramp.cml.Prod          # status
+./scripts/uninstall-mac-schedule.sh                         # remove both jobs
+```
+
+- A Mac that is asleep at the scheduled time runs the job when it wakes. A Mac that is powered off skips that day.
+- If a run fails with `could not read Username`, git credentials are not set up. See the prerequisites above.
+- If a run fails with `No authorization information found` or similar, re-run `sf org login` for that alias.
