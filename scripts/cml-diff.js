@@ -2,7 +2,7 @@
 /**
  * UAT1 vs Prod comparison of the LiveRampConstraints CML.
  *
- * Compares docs/cml_data.json (UAT1) with docs/prod/cml_data.json (Prod) and
+ * Compares docs/uat1/cml_data.json (UAT1) with docs/prod/cml_data.json (Prod) and
  * writes a self-contained report, docs/CML_UAT1_vs_Prod.html. Conditions are
  * compared by kind + whitespace-normalised CML (leading `//` notes ignored),
  * so reordering or reformatting is not reported as a difference.
@@ -108,7 +108,7 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:12px/1.45 ui-monosp
 code{background:#E6ECEE;border-radius:4px;padding:1px 6px;margin-right:4px}
 </style></head><body>
 <header><h1>CML differences: UAT1 vs Prod</h1>
-<nav><a href="CML_Rule_Explorer.html">UAT1 explorer</a><a href="prod/CML_Rule_Explorer.html">Prod explorer</a></nav>
+<nav><a href="uat1/CML_Rule_Explorer.html">UAT1 explorer</a><a href="prod/CML_Rule_Explorer.html">Prod explorer</a></nav>
 <p>Expression Set <code>LiveRampConstraints</code>. Generated ${esc(generated)}. Conditions are matched on their CML text, ignoring whitespace and leading comments.</p></header>
 <main>
 <div class="sum">
@@ -126,10 +126,10 @@ module.exports = { compareTypes, buildDiffHtml };
 
 if (require.main === module) {
   const docs = path.resolve(__dirname, '..', 'docs');
-  const uatFile = path.join(docs, 'cml_data.json');
+  const uatFile = path.join(docs, 'uat1', 'cml_data.json');
   const prodFile = path.join(docs, 'prod', 'cml_data.json');
   if (!fs.existsSync(uatFile) || !fs.existsSync(prodFile)) {
-    console.error('Need both docs/cml_data.json and docs/prod/cml_data.json');
+    console.error('Need both docs/uat1/cml_data.json and docs/prod/cml_data.json');
     process.exit(1);
   }
   const html = buildDiffHtml(

@@ -4,16 +4,16 @@ Mirrors the UAT1 and Prod `LiveRampConstraints` CalcProcedureDefinition (CML) so
 
 ## Contents
 
-- `docs/LiveRampConstraints.txt` — raw CML source as last fetched from UAT1 (compared byte-for-byte on each daily check to detect rule changes)
-- `docs/cml_data.json` — parsed type/condition data extracted from the raw CML
-- `docs/CML_Rule_Explorer.html` — self-contained, filterable HTML explorer built from `cml_data.json`; open directly in a browser
+- `docs/uat1/LiveRampConstraints.txt` — raw CML source as last fetched from UAT1 (compared byte-for-byte on each daily check to detect rule changes)
+- `docs/uat1/cml_data.json` — parsed type/condition data extracted from the raw CML
+- `docs/uat1/CML_Rule_Explorer.html` — self-contained, filterable HTML explorer built from `cml_data.json`; open directly in a browser
 - `docs/CML_MEMORY.md` — human-readable summary of the business rules, pricing models, and known issues
-- `docs/CML_Quote_Pricing_Guide.html` — tabbed narrative doc (stats synced from `LiveRampConstraints.txt` on refresh); mirrored under `RCASalesforce/docs/CML/` when present
+- `docs/CML_Quote_Pricing_Guide.html` — tabbed narrative doc (stats synced from `uat1/LiveRampConstraints.txt` on refresh); mirrored under `RCASalesforce/docs/CML/` when present
 - `docs/category_map.json` — product-type → category mapping used by the explorer's category filter
 
 ## Daily refresh
 
-`scripts/cml-daily-refresh.js` pulls the active `ExpressionSetDefinitionVersion` for `LiveRampConstraints` from the UAT1 org and compares it to the `docs/LiveRampConstraints.txt` already committed on `main`. If nothing changed, it exits without touching git. If the CML changed, it updates `LiveRampConstraints.txt` / `cml_data.json` / `CML_Rule_Explorer.html` / the stats in `CML_MEMORY.md` in place and commits straight to `main`, with a commit message stamped with an ISO timestamp and a description of what changed (types/conditions added, removed, or changed counts), e.g.:
+`scripts/cml-daily-refresh.js` pulls the active `ExpressionSetDefinitionVersion` for `LiveRampConstraints` from the UAT1 org and compares it to the `docs/uat1/LiveRampConstraints.txt` already committed on `main`. If nothing changed, it exits without touching git. If the CML changed, it updates `LiveRampConstraints.txt` / `cml_data.json` / `CML_Rule_Explorer.html` / the stats in `CML_MEMORY.md` in place and commits straight to `main`, with a commit message stamped with an ISO timestamp and a description of what changed (types/conditions added, removed, or changed counts), e.g.:
 
 ```
 CML update 2026-09-30T14:05:12.000Z: 163 -> 165 types, 2110 -> 2118 conditions (+8); added: NewProductType; changed: Activation (+3)
@@ -29,7 +29,7 @@ The same script can mirror Prod (read-only: one SOQL query and one GET on `Const
 node scripts/cml-daily-refresh.js --org Prod --alias <sf-alias-for-prod> [--no-git]
 ```
 
-- Output goes to `docs/prod/` (`LiveRampConstraints.txt`, `cml_data.json`, `CML_Rule_Explorer.html`). The Prod page is built from the UAT1 page, so identical CML keeps its plain-English text.
+- Same three files per environment: `docs/uat1/` for UAT1, `docs/prod/` for Prod. Prod output goes to `docs/prod/` (`LiveRampConstraints.txt`, `cml_data.json`, `CML_Rule_Explorer.html`). The Prod page is built from the UAT1 page, so identical CML keeps its plain-English text.
 - `docs/CML_UAT1_vs_Prod.html` is regenerated on every run once both mirrors exist (`node scripts/cml-diff.js` rebuilds it on its own).
 - The explorer pages link to each other and to the diff report.
 - `--no-git` regenerates files without checkout, commit or push. `CML_MEMORY.md` and the Quote Pricing Guide stay UAT1-only.

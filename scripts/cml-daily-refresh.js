@@ -4,11 +4,11 @@
  *   1. Resolve the active ExpressionSetDefinitionVersion for the
  *      LiveRampConstraints Expression Set in UAT1 and pull its raw CML
  *      (ConstraintModel) text via the REST API.
- *   2. Compare it to docs/LiveRampConstraints.txt as currently committed on
+ *   2. Compare it to docs/uat1/LiveRampConstraints.txt as currently committed on
  *      main. If identical, stop — nothing to do today.
- *   3. If different: overwrite docs/LiveRampConstraints.txt in place,
- *      re-parse into docs/cml_data.json, re-embed into
- *      docs/CML_Rule_Explorer.html (DATA array in the UI shape, built by
+ *   3. If different: overwrite docs/uat1/LiveRampConstraints.txt in place,
+ *      re-parse into docs/uat1/cml_data.json, re-embed into
+ *      docs/uat1/CML_Rule_Explorer.html (DATA array in the UI shape, built by
  *      scripts/cml-explorer-model.js), refresh
  *      the stats block in docs/CML_MEMORY.md, and commit straight to main
  *      with a timestamped message describing what changed (types/conditions
@@ -26,7 +26,7 @@ const { buildExplorerData, readEmbeddedData } = require('./cml-explorer-model');
 const { buildDiffHtml } = require('./cml-diff');
 
 // CLI: node scripts/cml-daily-refresh.js [--org UAT1|Prod] [--alias <sf alias>] [--no-git]
-//   --org      which environment to mirror (default UAT1). Prod output goes to docs/prod/.
+//   --org      which environment to mirror (default UAT1). Output goes to docs/uat1/ or docs/prod/.
 //   --alias    sf CLI alias to use (default: same as --org).
 //   --no-git   fetch + regenerate files only; skip checkout/pull/commit/push.
 // Only read-only calls are made against the org (SOQL query + GET ConstraintModel).
@@ -42,11 +42,11 @@ const NO_GIT = process.argv.includes('--no-git');
 const EXPRESSION_SET_NAME = 'LiveRampConstraints';
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DOCS_DIR = path.join(REPO_ROOT, 'docs');
-const ORG_DIR = IS_PROD ? path.join(DOCS_DIR, 'prod') : DOCS_DIR;
+const ORG_DIR = path.join(DOCS_DIR, IS_PROD ? 'prod' : 'uat1');
 const RAW_CML_TXT = path.join(ORG_DIR, 'LiveRampConstraints.txt');
 const CML_DATA_JSON = path.join(ORG_DIR, 'cml_data.json');
 const EXPLORER_HTML = path.join(ORG_DIR, 'CML_Rule_Explorer.html');
-const UAT_EXPLORER_TEMPLATE = path.join(DOCS_DIR, 'CML_Rule_Explorer.html');
+const UAT_EXPLORER_TEMPLATE = path.join(DOCS_DIR, 'uat1', 'CML_Rule_Explorer.html');
 const CATEGORY_MAP_JSON = path.join(DOCS_DIR, 'category_map.json');
 const MEMORY_MD = path.join(DOCS_DIR, 'CML_MEMORY.md');
 const QUOTE_GUIDE_HTML = path.join(DOCS_DIR, 'CML_Quote_Pricing_Guide.html');
@@ -137,8 +137,8 @@ function applyPageChrome(html, label, links) {
 }
 
 const PAGE_LINKS = {
-  UAT1: [['Prod explorer', 'prod/CML_Rule_Explorer.html'], ['UAT1 vs Prod differences', 'CML_UAT1_vs_Prod.html']],
-  Prod: [['UAT1 explorer', '../CML_Rule_Explorer.html'], ['UAT1 vs Prod differences', '../CML_UAT1_vs_Prod.html']],
+  UAT1: [['Prod explorer', '../prod/CML_Rule_Explorer.html'], ['UAT1 vs Prod differences', '../CML_UAT1_vs_Prod.html']],
+  Prod: [['UAT1 explorer', '../uat1/CML_Rule_Explorer.html'], ['UAT1 vs Prod differences', '../CML_UAT1_vs_Prod.html']],
 };
 
 function updateExplorerHtml(types) {
@@ -169,7 +169,7 @@ function updateExplorerHtml(types) {
 
 /** Regenerate docs/CML_UAT1_vs_Prod.html when both environments are mirrored. */
 function updateDiffReport() {
-  const uatJson = path.join(DOCS_DIR, 'cml_data.json');
+  const uatJson = path.join(DOCS_DIR, 'uat1', 'cml_data.json');
   const prodJson = path.join(DOCS_DIR, 'prod', 'cml_data.json');
   if (!fs.existsSync(uatJson) || !fs.existsSync(prodJson)) return;
   const html = buildDiffHtml(

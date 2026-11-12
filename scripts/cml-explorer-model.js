@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Converts the raw parser output (scripts/cml-parse.js -> docs/cml_data.json:
+ * Converts the raw parser output (scripts/cml-parse.js -> docs/uat1/cml_data.json:
  * name / parent / annotation / alias / conditions[{kind, code}] / count /
- * category) into the shape docs/CML_Rule_Explorer.html renders:
+ * category) into the shape docs/uat1/CML_Rule_Explorer.html renders:
  *
  *   { id, api, name, parent, category,
  *     attributes[], rules[], messages[], preferences[], dependencies[] }

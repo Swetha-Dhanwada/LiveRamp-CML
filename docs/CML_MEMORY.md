@@ -1,6 +1,6 @@
 # UAT1 LiveRampConstraints (CML) - LiveRamp Quote Pricing System
 
-**Canonical source:** `docs/LiveRampConstraints.txt` in this repo (`C:\Users\sdhanw\RCASalesforce\CML-UAT\docs\LiveRampConstraints.txt`). All parsers, explorers, and narrative docs must derive from this file — not from ad-hoc sandbox exports.
+**Canonical source:** `docs/uat1/LiveRampConstraints.txt` in this repo (`C:\Users\sdhanw\RCASalesforce\CML-UAT\docs\uat1\LiveRampConstraints.txt`). All parsers, explorers, and narrative docs must derive from this file — not from ad-hoc sandbox exports.
 
 **Backup Date:** 2026-11-12 (auto-refreshed from UAT1)
 **Expression Set Name:** LiveRampConstraints (UAT1 active ConstraintModel)  
@@ -114,18 +114,18 @@ For the exact per-type breakdown, use `CML_Rule_Explorer.html` (below) instead o
 
 ## CML Quote Pricing Guide (narrative artifact)
 
-`docs/CML_Quote_Pricing_Guide.html` — tabbed functional + language reference; stats (`cml-meta-*`, `cml-stat-*` classes) auto-updated from `LiveRampConstraints.txt` when `cml-daily-refresh.js` runs. A copy may also exist at `RCASalesforce/docs/CML/CML_Quote_Pricing_Guide.html`.
+`docs/CML_Quote_Pricing_Guide.html` — tabbed functional + language reference; stats (`cml-meta-*`, `cml-stat-*` classes) auto-updated from `uat1/LiveRampConstraints.txt` when `cml-daily-refresh.js` runs. A copy may also exist at `RCASalesforce/docs/CML/CML_Quote_Pricing_Guide.html`.
 
 ## CML Rule Explorer (searchable artifact)
 
-`docs/CML_Rule_Explorer.html` is a self-contained, filterable HTML explorer generated from `docs/LiveRampConstraints.txt`. Open it directly in a browser — no server needed. Styled with the same light theme (off-white page, white cards, blue/red/amber/green accents) as the RCA Attribute-Based Product Catalog artifact for a consistent look and feel across CML docs.
+`docs/uat1/CML_Rule_Explorer.html` is a self-contained, filterable HTML explorer generated from `docs/uat1/LiveRampConstraints.txt`. Open it directly in a browser — no server needed. Styled with the same light theme (off-white page, white cards, blue/red/amber/green accents) as the RCA Attribute-Based Product Catalog artifact for a consistent look and feel across CML docs.
 
 - **Search** across condition text and product/type names (e.g. `"Revenue Share"`, `"CRM-43819"`, `"Publicis"`)
 - **Category filter**: Activation, Measurement, Clean Room, Identity Services, Conversion APIs, Services, Analytics & Data, Connections/Destinations, Core/Bundle, Other
 - **Condition-kind chips**: toggle `message` / `require` / `preference` / `rule` / `constraint` independently
 - Each product type is a collapsible section showing its parent type (e.g. `Activation extends LineItem`) and every condition defined on it, with match counts
 
-Use this instead of scrolling the raw CML in the org to find or audit a specific rule. Regenerate after any UAT1 change with `node scripts/cml-daily-refresh.js` so `LiveRampConstraints.txt`, `cml_data.json`, this explorer, `CML_MEMORY.md` stats, and `CML_Quote_Pricing_Guide.html` stay in sync.
+Use this instead of scrolling the raw CML in the org to find or audit a specific rule. Regenerate after any UAT1 change with `node scripts/cml-daily-refresh.js` so `uat1/LiveRampConstraints.txt`, `uat1/cml_data.json`, this explorer, `CML_MEMORY.md` stats, and `CML_Quote_Pricing_Guide.html` stay in sync.
 
 ---
 
