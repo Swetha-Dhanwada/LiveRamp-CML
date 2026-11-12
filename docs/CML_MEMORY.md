@@ -2,7 +2,7 @@
 
 **Canonical source:** `docs/LiveRampConstraints.txt` in this repo (`C:\Users\sdhanw\RCASalesforce\CML-UAT\docs\LiveRampConstraints.txt`). All parsers, explorers, and narrative docs must derive from this file — not from ad-hoc sandbox exports.
 
-**Backup Date:** 2026-11-11 (auto-refreshed from UAT1)
+**Backup Date:** 2026-11-12 (auto-refreshed from UAT1)
 **Expression Set Name:** LiveRampConstraints (UAT1 active ConstraintModel)  
 **System:** LiveRamp Quote-to-Cash
 
@@ -103,7 +103,7 @@ Clean Room Publicis Funded must be standalone-only (cannot combine with other pr
 
 ## File Statistics
 
-- **Total Lines:** 7,032
+- **Total Lines:** 7,029
 - **Product Types (type blocks parsed):** 162
 - **Total Conditions (message/require/preference/rule/constraint):** 2,056
 - **Asset Relations:** 30+ (for dependency checks)

@@ -6299,9 +6299,6 @@ type LiveRampCleanRoomEnhancedOwner : LineItem {
 
     @(defaultValue = "Each")
     string UnitOfMeasure = ["Each"];
-
-    string Meta_As_Partner = ["With Meta", "Without Meta"];
-
 }
 
 type LiveRampCleanRoomEnterpriseOwner : LineItem {
